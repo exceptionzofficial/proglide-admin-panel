@@ -23,7 +23,7 @@ const Sidebar = () => {
       {/* Brand Header */}
       <div className="h-20 flex items-center justify-center border-b border-gray-100 bg-white">
         <div className="text-center">
-          <h1 className="text-2xl font-black text-[rgb(157,71,10)] uppercase tracking-tighter leading-none">PROGLIDE</h1>
+          <h1 className="text-2xl font-black text-[rgb(157,71,10)] uppercase tracking-tighter leading-none">PRO-GLIDE</h1>
           <span className="text-[10px] font-bold text-gray-400 tracking-[0.4em] uppercase block mt-1">Admin Panel</span>
         </div>
       </div>
@@ -59,11 +59,11 @@ const Sidebar = () => {
       <div className="p-4 border-t border-gray-100 bg-gray-50">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-black text-white flex items-center justify-center font-bold text-lg">
-            A
+            E
           </div>
           <div className="overflow-hidden">
-            <p className="text-xs font-bold text-gray-900 uppercase truncate">Administrator</p>
-            <p className="text-[10px] text-gray-500 truncate">admin@proglide.com</p>
+            <p className="text-xs font-bold text-gray-900 uppercase truncate">Exceptionz</p>
+            <p className="text-[10px] text-gray-500 truncate">exceptionzofficial@gamil.com</p>
           </div>
         </div>
       </div>

@@ -114,12 +114,12 @@ const ProductManager = ({ category }) => {
               placeholder="Search specifications..." 
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 bg-white border border-gray-300 focus:border-[rgb(157,71,10)] focus:ring-1 focus:ring-[rgb(157,71,10)] outline-none text-sm font-semibold"
+              className="w-full pl-10 pr-4 py-3 bg-white border border-gray-300 focus:border-[rgb(157,71,10)] focus:ring-1 focus:ring-[rgb(157,71,10)] outline-none text-sm font-semibold sharp-edges"
             />
           </div>
           <button 
             onClick={() => handleOpenModal()}
-            className="bg-[rgb(157,71,10)] text-white px-6 py-3 font-bold uppercase text-sm tracking-wider hover:bg-black transition-colors flex items-center gap-2"
+            className="bg-[rgb(157,71,10)] text-white px-6 py-3 font-bold uppercase text-sm tracking-wider hover:bg-black transition-colors flex items-center gap-2 sharp-edges"
           >
             <Plus size={18} /> Add New
           </button>
@@ -129,7 +129,7 @@ const ProductManager = ({ category }) => {
       {/* LOADING STATE */}
       {loading ? (
         <div className="flex-1 flex flex-col justify-center items-center opacity-70">
-           <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: "linear" }} className="w-12 h-12 border-4 border-gray-300 border-t-[rgb(157,71,10)] mb-4" />
+           <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: "linear" }} className="w-12 h-12 border-4 border-gray-300 border-t-[rgb(157,71,10)] mb-4 sharp-edges" />
            <p className="font-bold text-[rgb(157,71,10)] animate-pulse">LOADING DATA...</p>
         </div>
       ) : (
@@ -144,16 +144,17 @@ const ProductManager = ({ category }) => {
                 exit={{ opacity: 0, scale: 0.9 }}
                 transition={{ duration: 0.2 }}
                 key={item._id}
-                className="card-box bg-white border border-gray-200 shadow-sm hover:shadow-xl hover:border-[rgb(157,71,10)] transition-all duration-300 group flex flex-col"
+                className="card-box bg-white border border-gray-200 shadow-sm hover:shadow-xl hover:border-[rgb(157,71,10)] transition-all duration-300 group flex flex-col sharp-edges"
               >
                 {/* CARD HEADER */}
                 <div className="p-5 border-b border-gray-100 bg-gray-50 group-hover:bg-[rgb(157,71,10)] group-hover:text-white transition-colors duration-300">
                   <div className="flex justify-between items-start">
                     <div>
                       <span className="text-[10px] font-bold uppercase tracking-widest opacity-70 block mb-1">
-                        {item.specs.brandName || "Product Model"}
+                        {item.specs.brandName || category}
                       </span>
                       <h3 className="text-xl font-black leading-none">
+                        {/* Logic for Title: Shows OriginalDrawing, Base Model, or Model No */}
                         {item.specs.originalDrawingModel || item.specs.baseModel || item.specs.modelNo || "Unknown Model"}
                       </h3>
                     </div>
@@ -178,9 +179,21 @@ const ProductManager = ({ category }) => {
                   {/* Dynamic Technical Specs Grid */}
                   <div className="grid grid-cols-2 gap-y-3 gap-x-2">
                      {Object.entries(item.specs).map(([key, value]) => {
-                        // Filter out empty fields and redundant headers
-                        if(!value || ['baseModel', 'modelNo', 'originalDrawingModel', 'brandName'].includes(key)) return null;
+                        if(!value) return null;
                         
+                        // LOGIC UPDATE: 
+                        // We check if this specific key is already being used as the Big Header Title.
+                        // If it is, we hide it here to avoid duplication.
+                        // For CC Board/Center Panel: 'baseModel' is the header, so 'modelNo' WILL show here.
+                        const isUsedAsHeader = 
+                             (key === 'originalDrawingModel') || 
+                             (key === 'baseModel') || 
+                             // Only hide Model No if it's the ONLY title (like Battery/Combo)
+                             (key === 'modelNo' && (category === 'Battery' || category === 'Combo/Display'));
+
+                        if(isUsedAsHeader) return null;
+                        if(key === 'brandName') return null; // Brand name is shown small at top
+
                         return (
                           <div key={key} className="flex flex-col">
                             <span className="text-[10px] uppercase font-bold text-gray-400">{formatKey(key)}</span>
@@ -195,13 +208,13 @@ const ProductManager = ({ category }) => {
                 <div className="flex border-t border-gray-200">
                   <button 
                     onClick={() => handleOpenModal(item)}
-                    className="flex-1 py-3 text-xs font-bold uppercase text-gray-600 hover:bg-black hover:text-white transition-colors flex items-center justify-center gap-2 border-r border-gray-200"
+                    className="flex-1 py-3 text-xs font-bold uppercase text-gray-600 hover:bg-black hover:text-white transition-colors flex items-center justify-center gap-2 border-r border-gray-200 sharp-edges"
                   >
                     <Edit3 size={14} /> Edit
                   </button>
                   <button 
                     onClick={() => handleDelete(item._id)}
-                    className="w-16 py-3 text-gray-400 hover:bg-red-600 hover:text-white transition-colors flex items-center justify-center"
+                    className="w-16 py-3 text-gray-400 hover:bg-red-600 hover:text-white transition-colors flex items-center justify-center sharp-edges"
                   >
                     <Trash2 size={16} />
                   </button>
@@ -220,7 +233,7 @@ const ProductManager = ({ category }) => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 20 }}
-              className="bg-white w-full max-w-2xl shadow-2xl flex flex-col max-h-[90vh]"
+              className="bg-white w-full max-w-2xl shadow-2xl flex flex-col max-h-[90vh] sharp-edges"
             >
               {/* Modal Header */}
               <div className="bg-black text-white p-5 flex justify-between items-center">
@@ -247,7 +260,7 @@ const ProductManager = ({ category }) => {
                       rows="2" 
                       value={formData.compatibleDevices} 
                       onChange={handleChange} 
-                      className="w-full p-3 bg-gray-50 border border-gray-300 focus:border-[rgb(157,71,10)] focus:ring-1 focus:ring-[rgb(157,71,10)] outline-none font-medium"
+                      className="w-full p-3 bg-gray-50 border border-gray-300 focus:border-[rgb(157,71,10)] focus:ring-1 focus:ring-[rgb(157,71,10)] outline-none font-medium sharp-edges"
                       placeholder="e.g. iPhone 13 Pro, Samsung S22, Pixel 6..." 
                     />
                   </div>
@@ -258,16 +271,16 @@ const ProductManager = ({ category }) => {
                     <>
                       <div className="md:col-span-2 p-4 bg-gray-50 border border-gray-200">
                          <label className="block text-xs font-black text-[rgb(157,71,10)] uppercase mb-2">Original Drawing (Master Model)</label>
-                         <input name="originalDrawingModel" value={formData.specs.originalDrawingModel} onChange={e => handleChange(e, true)} className="w-full p-3 border border-gray-300 focus:border-black outline-none font-bold" placeholder="Required" />
+                         <input name="originalDrawingModel" value={formData.specs.originalDrawingModel} onChange={e => handleChange(e, true)} className="w-full p-3 border border-gray-300 focus:border-black outline-none font-bold sharp-edges" placeholder="Required" />
                       </div>
                       
                       <div>
                         <label className="text-xs font-black text-gray-400 uppercase">Height (mm)</label>
-                        <input type="number" name="height" value={formData.specs.height} onChange={e => handleChange(e, true)} className="w-full p-3 border border-gray-300 focus:border-black outline-none" />
+                        <input type="number" name="height" value={formData.specs.height} onChange={e => handleChange(e, true)} className="w-full p-3 border border-gray-300 focus:border-black outline-none sharp-edges" />
                       </div>
                       <div>
                         <label className="text-xs font-black text-gray-400 uppercase">Width (mm)</label>
-                        <input type="number" name="width" value={formData.specs.width} onChange={e => handleChange(e, true)} className="w-full p-3 border border-gray-300 focus:border-black outline-none" />
+                        <input type="number" name="width" value={formData.specs.width} onChange={e => handleChange(e, true)} className="w-full p-3 border border-gray-300 focus:border-black outline-none sharp-edges" />
                       </div>
                       
                       <div className="md:col-span-2 grid grid-cols-2 gap-4 pt-4 border-t border-gray-100 mt-2">
@@ -275,7 +288,7 @@ const ProductManager = ({ category }) => {
                         {['radiusTopLeft', 'radiusTopRight', 'radiusBottomLeft', 'radiusBottomRight'].map(field => (
                             <div key={field}>
                                 <label className="text-[10px] font-bold text-gray-400 uppercase">{formatKey(field)}</label>
-                                <input type="number" name={field} value={formData.specs[field]} onChange={e => handleChange(e, true)} className="w-full p-2 border border-gray-300 focus:border-[rgb(157,71,10)] outline-none bg-gray-50" />
+                                <input type="number" name={field} value={formData.specs[field]} onChange={e => handleChange(e, true)} className="w-full p-2 border border-gray-300 focus:border-[rgb(157,71,10)] outline-none bg-gray-50 sharp-edges" />
                             </div>
                         ))}
                       </div>
@@ -284,15 +297,15 @@ const ProductManager = ({ category }) => {
 
                   {(category === 'Phone Case' || category === 'CC Board' || category === 'Center Panel') && (
                     <>
-                       <div className="md:col-span-2"><label className="text-xs font-black text-gray-400 uppercase">Base Model</label><input name="baseModel" value={formData.specs.baseModel} onChange={e => handleChange(e, true)} className="w-full p-3 border border-gray-300 focus:border-black outline-none" /></div>
-                       {(category === 'CC Board' || category === 'Center Panel') && <div><label className="text-xs font-black text-gray-400 uppercase">Model No</label><input name="modelNo" value={formData.specs.modelNo} onChange={e => handleChange(e, true)} className="w-full p-3 border border-gray-300 focus:border-black outline-none" /></div>}
+                       <div className="md:col-span-2"><label className="text-xs font-black text-gray-400 uppercase">Base Model</label><input name="baseModel" value={formData.specs.baseModel} onChange={e => handleChange(e, true)} className="w-full p-3 border border-gray-300 focus:border-black outline-none sharp-edges" /></div>
+                       {(category === 'CC Board' || category === 'Center Panel') && <div><label className="text-xs font-black text-gray-400 uppercase">Model No</label><input name="modelNo" value={formData.specs.modelNo} onChange={e => handleChange(e, true)} className="w-full p-3 border border-gray-300 focus:border-black outline-none sharp-edges" /></div>}
                     </>
                   )}
 
                   {(category === 'Combo/Display' || category === 'Battery') && (
                     <>
-                      {category === 'Combo/Display' && <div><label className="text-xs font-black text-gray-400 uppercase">Brand Name</label><input name="brandName" value={formData.specs.brandName} onChange={e => handleChange(e, true)} className="w-full p-3 border border-gray-300 focus:border-black outline-none" /></div>}
-                      <div><label className="text-xs font-black text-gray-400 uppercase">Model Number</label><input name="modelNo" value={formData.specs.modelNo} onChange={e => handleChange(e, true)} className="w-full p-3 border border-gray-300 focus:border-black outline-none" /></div>
+                      {category === 'Combo/Display' && <div><label className="text-xs font-black text-gray-400 uppercase">Brand Name</label><input name="brandName" value={formData.specs.brandName} onChange={e => handleChange(e, true)} className="w-full p-3 border border-gray-300 focus:border-black outline-none sharp-edges" /></div>}
+                      <div><label className="text-xs font-black text-gray-400 uppercase">Model Number</label><input name="modelNo" value={formData.specs.modelNo} onChange={e => handleChange(e, true)} className="w-full p-3 border border-gray-300 focus:border-black outline-none sharp-edges" /></div>
                     </>
                   )}
                 </form>
@@ -300,8 +313,8 @@ const ProductManager = ({ category }) => {
 
               {/* Modal Footer */}
               <div className="p-5 bg-gray-100 border-t border-gray-200 flex justify-end gap-3">
-                <button onClick={() => setIsModalOpen(false)} className="px-6 py-3 font-bold uppercase text-gray-500 hover:bg-gray-200 transition text-sm">Cancel</button>
-                <button onClick={handleSave} className="bg-[rgb(157,71,10)] text-white px-8 py-3 font-bold uppercase text-sm hover:bg-black transition flex items-center shadow-lg">
+                <button onClick={() => setIsModalOpen(false)} className="px-6 py-3 font-bold uppercase text-gray-500 hover:bg-gray-200 transition text-sm sharp-edges">Cancel</button>
+                <button onClick={handleSave} className="bg-[rgb(157,71,10)] text-white px-8 py-3 font-bold uppercase text-sm hover:bg-black transition flex items-center shadow-lg sharp-edges">
                   <Save size={16} className="mr-2"/> Save Record
                 </button>
               </div>
