@@ -3,7 +3,7 @@ import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Plus, X, Save, Trash2, Edit3, Grid, Smartphone, Maximize } from 'lucide-react';
 
-const API_URL = 'https://exceptionprjct1-jeeva.vercel.app/api/products';
+const API_URL = 'https://proglide-backend.vercel.app/api/products';
 
 // Helper to format text (e.g. "radiusTopLeft" -> "Top Left Radius")
 const formatKey = (key) => {
@@ -93,31 +93,31 @@ const ProductManager = ({ category }) => {
 
   return (
     <div className="h-full flex flex-col bg-[#f3f4f6] p-6 page-transition">
-      
+
       {/* HEADER SECTION */}
       <div className="flex flex-col md:flex-row justify-between items-end mb-8 border-b-2 border-gray-200 pb-4">
         <div>
-           <div className="flex items-center gap-2 mb-1">
-              <span className="bg-[rgb(157,71,10)] w-2 h-8 block"></span>
-              <h2 className="text-4xl font-black text-gray-800 uppercase tracking-tighter">{category}</h2>
-           </div>
-           <p className="text-gray-500 font-medium ml-4">Inventory Management System</p>
+          <div className="flex items-center gap-2 mb-1">
+            <span className="bg-[rgb(157,71,10)] w-2 h-8 block"></span>
+            <h2 className="text-4xl font-black text-gray-800 uppercase tracking-tighter">{category}</h2>
+          </div>
+          <p className="text-gray-500 font-medium ml-4">Inventory Management System</p>
         </div>
-        
+
         <div className="flex gap-0 shadow-sm w-full md:w-auto mt-4 md:mt-0">
           <div className="relative flex-1 md:w-80">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <Search className="h-5 w-5 text-gray-400" />
             </div>
-            <input 
-              type="text" 
-              placeholder="Search specifications..." 
+            <input
+              type="text"
+              placeholder="Search specifications..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-3 bg-white border border-gray-300 focus:border-[rgb(157,71,10)] focus:ring-1 focus:ring-[rgb(157,71,10)] outline-none text-sm font-semibold sharp-edges"
             />
           </div>
-          <button 
+          <button
             onClick={() => handleOpenModal()}
             className="bg-[rgb(157,71,10)] text-white px-6 py-3 font-bold uppercase text-sm tracking-wider hover:bg-black transition-colors flex items-center gap-2 sharp-edges"
           >
@@ -129,8 +129,8 @@ const ProductManager = ({ category }) => {
       {/* LOADING STATE */}
       {loading ? (
         <div className="flex-1 flex flex-col justify-center items-center opacity-70">
-           <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: "linear" }} className="w-12 h-12 border-4 border-gray-300 border-t-[rgb(157,71,10)] mb-4 sharp-edges" />
-           <p className="font-bold text-[rgb(157,71,10)] animate-pulse">LOADING DATA...</p>
+          <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: "linear" }} className="w-12 h-12 border-4 border-gray-300 border-t-[rgb(157,71,10)] mb-4 sharp-edges" />
+          <p className="font-bold text-[rgb(157,71,10)] animate-pulse">LOADING DATA...</p>
         </div>
       ) : (
         /* GRID LAYOUT */
@@ -164,7 +164,7 @@ const ProductManager = ({ category }) => {
 
                 {/* CARD BODY (SPECS GRID) */}
                 <div className="p-5 flex-1">
-                  
+
                   {/* Highlighted Compatible Devices */}
                   <div className="mb-4 pb-4 border-b border-gray-100">
                     <div className="flex items-center gap-2 mb-1 text-[rgb(157,71,10)]">
@@ -178,41 +178,41 @@ const ProductManager = ({ category }) => {
 
                   {/* Dynamic Technical Specs Grid */}
                   <div className="grid grid-cols-2 gap-y-3 gap-x-2">
-                     {Object.entries(item.specs).map(([key, value]) => {
-                        if(!value) return null;
-                        
-                        // LOGIC UPDATE: 
-                        // We check if this specific key is already being used as the Big Header Title.
-                        // If it is, we hide it here to avoid duplication.
-                        // For CC Board/Center Panel: 'baseModel' is the header, so 'modelNo' WILL show here.
-                        const isUsedAsHeader = 
-                             (key === 'originalDrawingModel') || 
-                             (key === 'baseModel') || 
-                             // Only hide Model No if it's the ONLY title (like Battery/Combo)
-                             (key === 'modelNo' && (category === 'Battery' || category === 'Combo/Display'));
+                    {Object.entries(item.specs).map(([key, value]) => {
+                      if (!value) return null;
 
-                        if(isUsedAsHeader) return null;
-                        if(key === 'brandName') return null; // Brand name is shown small at top
+                      // LOGIC UPDATE: 
+                      // We check if this specific key is already being used as the Big Header Title.
+                      // If it is, we hide it here to avoid duplication.
+                      // For CC Board/Center Panel: 'baseModel' is the header, so 'modelNo' WILL show here.
+                      const isUsedAsHeader =
+                        (key === 'originalDrawingModel') ||
+                        (key === 'baseModel') ||
+                        // Only hide Model No if it's the ONLY title (like Battery/Combo)
+                        (key === 'modelNo' && (category === 'Battery' || category === 'Combo/Display'));
 
-                        return (
-                          <div key={key} className="flex flex-col">
-                            <span className="text-[10px] uppercase font-bold text-gray-400">{formatKey(key)}</span>
-                            <span className="text-sm font-bold text-gray-900 truncate" title={value}>{value}</span>
-                          </div>
-                        )
-                     })}
+                      if (isUsedAsHeader) return null;
+                      if (key === 'brandName') return null; // Brand name is shown small at top
+
+                      return (
+                        <div key={key} className="flex flex-col">
+                          <span className="text-[10px] uppercase font-bold text-gray-400">{formatKey(key)}</span>
+                          <span className="text-sm font-bold text-gray-900 truncate" title={value}>{value}</span>
+                        </div>
+                      )
+                    })}
                   </div>
                 </div>
 
                 {/* CARD FOOTER (ACTIONS) */}
                 <div className="flex border-t border-gray-200">
-                  <button 
+                  <button
                     onClick={() => handleOpenModal(item)}
                     className="flex-1 py-3 text-xs font-bold uppercase text-gray-600 hover:bg-black hover:text-white transition-colors flex items-center justify-center gap-2 border-r border-gray-200 sharp-edges"
                   >
                     <Edit3 size={14} /> Edit
                   </button>
-                  <button 
+                  <button
                     onClick={() => handleDelete(item._id)}
                     className="w-16 py-3 text-gray-400 hover:bg-red-600 hover:text-white transition-colors flex items-center justify-center sharp-edges"
                   >
@@ -229,7 +229,7 @@ const ProductManager = ({ category }) => {
       <AnimatePresence>
         {isModalOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 20 }}
@@ -245,35 +245,35 @@ const ProductManager = ({ category }) => {
                     {editingProduct ? 'Edit Specification' : 'New Entry'}
                   </h3>
                 </div>
-                <button onClick={() => setIsModalOpen(false)} className="hover:text-[rgb(157,71,10)] transition"><X size={24}/></button>
+                <button onClick={() => setIsModalOpen(false)} className="hover:text-[rgb(157,71,10)] transition"><X size={24} /></button>
               </div>
-              
+
               {/* Modal Form */}
               <div className="p-8 overflow-y-auto custom-scrollbar">
                 <form className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  
+
                   {/* Common: Compatible Devices */}
                   <div className="md:col-span-2">
                     <label className="block text-xs font-black text-gray-400 uppercase mb-1">Compatible Devices List</label>
-                    <textarea 
-                      name="compatibleDevices" 
-                      rows="2" 
-                      value={formData.compatibleDevices} 
-                      onChange={handleChange} 
+                    <textarea
+                      name="compatibleDevices"
+                      rows="2"
+                      value={formData.compatibleDevices}
+                      onChange={handleChange}
                       className="w-full p-3 bg-gray-50 border border-gray-300 focus:border-[rgb(157,71,10)] focus:ring-1 focus:ring-[rgb(157,71,10)] outline-none font-medium sharp-edges"
-                      placeholder="e.g. iPhone 13 Pro, Samsung S22, Pixel 6..." 
+                      placeholder="e.g. iPhone 13 Pro, Samsung S22, Pixel 6..."
                     />
                   </div>
 
                   {/* DYNAMIC FIELDS based on Category */}
-                  
+
                   {category === 'Screen Guard' && (
                     <>
                       <div className="md:col-span-2 p-4 bg-gray-50 border border-gray-200">
-                         <label className="block text-xs font-black text-[rgb(157,71,10)] uppercase mb-2">Original Drawing (Master Model)</label>
-                         <input name="originalDrawingModel" value={formData.specs.originalDrawingModel} onChange={e => handleChange(e, true)} className="w-full p-3 border border-gray-300 focus:border-black outline-none font-bold sharp-edges" placeholder="Required" />
+                        <label className="block text-xs font-black text-[rgb(157,71,10)] uppercase mb-2">Original Drawing (Master Model)</label>
+                        <input name="originalDrawingModel" value={formData.specs.originalDrawingModel} onChange={e => handleChange(e, true)} className="w-full p-3 border border-gray-300 focus:border-black outline-none font-bold sharp-edges" placeholder="Required" />
                       </div>
-                      
+
                       <div>
                         <label className="text-xs font-black text-gray-400 uppercase">Height (mm)</label>
                         <input type="number" name="height" value={formData.specs.height} onChange={e => handleChange(e, true)} className="w-full p-3 border border-gray-300 focus:border-black outline-none sharp-edges" />
@@ -282,14 +282,14 @@ const ProductManager = ({ category }) => {
                         <label className="text-xs font-black text-gray-400 uppercase">Width (mm)</label>
                         <input type="number" name="width" value={formData.specs.width} onChange={e => handleChange(e, true)} className="w-full p-3 border border-gray-300 focus:border-black outline-none sharp-edges" />
                       </div>
-                      
+
                       <div className="md:col-span-2 grid grid-cols-2 gap-4 pt-4 border-t border-gray-100 mt-2">
                         <span className="col-span-2 text-xs font-bold text-gray-500 uppercase tracking-widest text-center">Corner Radius Settings</span>
                         {['radiusTopLeft', 'radiusTopRight', 'radiusBottomLeft', 'radiusBottomRight'].map(field => (
-                            <div key={field}>
-                                <label className="text-[10px] font-bold text-gray-400 uppercase">{formatKey(field)}</label>
-                                <input type="number" name={field} value={formData.specs[field]} onChange={e => handleChange(e, true)} className="w-full p-2 border border-gray-300 focus:border-[rgb(157,71,10)] outline-none bg-gray-50 sharp-edges" />
-                            </div>
+                          <div key={field}>
+                            <label className="text-[10px] font-bold text-gray-400 uppercase">{formatKey(field)}</label>
+                            <input type="number" name={field} value={formData.specs[field]} onChange={e => handleChange(e, true)} className="w-full p-2 border border-gray-300 focus:border-[rgb(157,71,10)] outline-none bg-gray-50 sharp-edges" />
+                          </div>
                         ))}
                       </div>
                     </>
@@ -297,8 +297,8 @@ const ProductManager = ({ category }) => {
 
                   {(category === 'Phone Case' || category === 'CC Board' || category === 'Center Panel') && (
                     <>
-                       <div className="md:col-span-2"><label className="text-xs font-black text-gray-400 uppercase">Base Model</label><input name="baseModel" value={formData.specs.baseModel} onChange={e => handleChange(e, true)} className="w-full p-3 border border-gray-300 focus:border-black outline-none sharp-edges" /></div>
-                       {(category === 'CC Board' || category === 'Center Panel') && <div><label className="text-xs font-black text-gray-400 uppercase">Model No</label><input name="modelNo" value={formData.specs.modelNo} onChange={e => handleChange(e, true)} className="w-full p-3 border border-gray-300 focus:border-black outline-none sharp-edges" /></div>}
+                      <div className="md:col-span-2"><label className="text-xs font-black text-gray-400 uppercase">Base Model</label><input name="baseModel" value={formData.specs.baseModel} onChange={e => handleChange(e, true)} className="w-full p-3 border border-gray-300 focus:border-black outline-none sharp-edges" /></div>
+                      {(category === 'CC Board' || category === 'Center Panel') && <div><label className="text-xs font-black text-gray-400 uppercase">Model No</label><input name="modelNo" value={formData.specs.modelNo} onChange={e => handleChange(e, true)} className="w-full p-3 border border-gray-300 focus:border-black outline-none sharp-edges" /></div>}
                     </>
                   )}
 
@@ -315,7 +315,7 @@ const ProductManager = ({ category }) => {
               <div className="p-5 bg-gray-100 border-t border-gray-200 flex justify-end gap-3">
                 <button onClick={() => setIsModalOpen(false)} className="px-6 py-3 font-bold uppercase text-gray-500 hover:bg-gray-200 transition text-sm sharp-edges">Cancel</button>
                 <button onClick={handleSave} className="bg-[rgb(157,71,10)] text-white px-8 py-3 font-bold uppercase text-sm hover:bg-black transition flex items-center shadow-lg sharp-edges">
-                  <Save size={16} className="mr-2"/> Save Record
+                  <Save size={16} className="mr-2" /> Save Record
                 </button>
               </div>
             </motion.div>
