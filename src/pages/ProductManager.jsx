@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Plus, X, Save, Trash2, Edit3, Grid, Smartphone, Maximize } from 'lucide-react';
+import { Search, Plus, X, Save, Trash2, Edit3, Grid, Smartphone, Maximize, Minimize2, List } from 'lucide-react';
 
 const API_URL = 'https://proglide-backend.vercel.app/api/products';
 
@@ -21,10 +21,13 @@ const ProductManager = ({ category }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
 
+  // View Mode State
+  const [isExpandedView, setIsExpandedView] = useState(false);
+
   // Form State
   const initialFormState = {
     category,
-    compatibleDevices: '', // Stored as "dev1,dev2,dev3" string in backend
+    compatibleDevices: '',
     specs: {
       originalDrawingModel: '', height: '', width: '',
       radiusTopLeft: '', radiusTopRight: '', radiusBottomLeft: '', radiusBottomRight: '',
@@ -32,8 +35,6 @@ const ProductManager = ({ category }) => {
     }
   };
   const [formData, setFormData] = useState(initialFormState);
-  
-  // State for the Tag Input Field
   const [tagInput, setTagInput] = useState('');
 
   // Fetch Data
@@ -51,7 +52,8 @@ const ProductManager = ({ category }) => {
   // --- HANDLERS ---
 
   const handleOpenModal = (product = null) => {
-    setTagInput(''); // Clear typing input
+    setTagInput('');
+    setIsExpandedView(false);
     if (product) {
       setEditingProduct(product);
       setFormData({
@@ -94,27 +96,21 @@ const ProductManager = ({ category }) => {
     else setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  // --- TAG SYSTEM LOGIC ---
-
-  // Add tag on "Enter" key
+  // --- TAG LOGIC ---
   const handleTagKeyDown = (e) => {
     if (e.key === 'Enter') {
       e.preventDefault();
       const val = tagInput.trim();
       if (!val) return;
-
-      // Split existing string into array, add new, join back to string
       const currentTags = formData.compatibleDevices ? formData.compatibleDevices.split(',') : [];
-      // Prevent duplicates
       if (!currentTags.includes(val)) {
         const newTags = [...currentTags, val];
         setFormData(prev => ({ ...prev, compatibleDevices: newTags.join(',') }));
       }
-      setTagInput(''); // Clear input
+      setTagInput('');
     }
   };
 
-  // Remove tag
   const removeTag = (tagToRemove) => {
     const currentTags = formData.compatibleDevices ? formData.compatibleDevices.split(',') : [];
     const newTags = currentTags.filter(tag => tag !== tagToRemove);
@@ -126,7 +122,7 @@ const ProductManager = ({ category }) => {
   return (
     <div className="h-full flex flex-col bg-[#f3f4f6] p-4 md:p-6 page-transition">
 
-      {/* HEADER SECTION */}
+      {/* HEADER */}
       <div className="flex flex-col md:flex-row justify-between items-end mb-6 border-b-2 border-gray-200 pb-4">
         <div>
           <div className="flex items-center gap-2 mb-1">
@@ -135,7 +131,6 @@ const ProductManager = ({ category }) => {
           </div>
           <p className="text-gray-500 font-medium ml-4 text-sm">Inventory Management System</p>
         </div>
-
         <div className="flex gap-0 shadow-sm w-full md:w-auto mt-4 md:mt-0">
           <div className="relative flex-1 md:w-64 lg:w-80">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -158,14 +153,13 @@ const ProductManager = ({ category }) => {
         </div>
       </div>
 
-      {/* LOADING STATE */}
+      {/* GRID */}
       {loading ? (
         <div className="flex-1 flex flex-col justify-center items-center opacity-70">
           <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: "linear" }} className="w-12 h-12 border-4 border-gray-300 border-t-[rgb(157,71,10)] mb-4 sharp-edges" />
           <p className="font-bold text-[rgb(157,71,10)] animate-pulse">LOADING...</p>
         </div>
       ) : (
-        /* GRID LAYOUT - UPDATED FOR 6 COLUMNS */
         <motion.div layout className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4 pb-20">
           <AnimatePresence>
             {filteredProducts.map((item) => (
@@ -178,7 +172,6 @@ const ProductManager = ({ category }) => {
                 key={item._id}
                 className="card-box bg-white border border-gray-200 shadow-sm hover:shadow-xl hover:border-[rgb(157,71,10)] transition-all duration-300 group flex flex-col sharp-edges"
               >
-                {/* CARD HEADER */}
                 <div className="p-3 border-b border-gray-100 bg-gray-50 group-hover:bg-[rgb(157,71,10)] group-hover:text-white transition-colors duration-300">
                   <div className="flex justify-between items-start">
                     <div className="overflow-hidden">
@@ -186,22 +179,18 @@ const ProductManager = ({ category }) => {
                         {item.specs.brandName || category}
                       </span>
                       <h3 className="text-lg font-black leading-none truncate" title={item.specs.originalDrawingModel || item.specs.baseModel || item.specs.modelNo}>
-                         {item.specs.originalDrawingModel || item.specs.baseModel || item.specs.modelNo || "Unknown Model"}
+                        {item.specs.originalDrawingModel || item.specs.baseModel || item.specs.modelNo || "Unknown Model"}
                       </h3>
                     </div>
                     <Grid size={16} className="opacity-50 shrink-0 ml-1" />
                   </div>
                 </div>
-
-                {/* CARD BODY */}
                 <div className="p-3 flex-1">
-                  {/* Technical Specs First */}
                   <div className="grid grid-cols-2 gap-y-2 gap-x-2 mb-3 pb-3 border-b border-gray-100">
                     {Object.entries(item.specs).map(([key, value]) => {
                       if (!value) return null;
                       const isUsedAsHeader = (key === 'originalDrawingModel') || (key === 'baseModel') || (key === 'modelNo' && (category === 'Battery' || category === 'Combo/Display'));
                       if (isUsedAsHeader || key === 'brandName') return null;
-
                       return (
                         <div key={key} className="flex flex-col overflow-hidden">
                           <span className="text-[9px] uppercase font-bold text-gray-400 truncate">{formatKey(key)}</span>
@@ -210,8 +199,6 @@ const ProductManager = ({ category }) => {
                       )
                     })}
                   </div>
-
-                  {/* Compatibility */}
                   <div>
                     <div className="flex items-center gap-1.5 mb-1 text-[rgb(157,71,10)]">
                       <Smartphone size={12} />
@@ -222,8 +209,6 @@ const ProductManager = ({ category }) => {
                     </p>
                   </div>
                 </div>
-
-                {/* CARD ACTIONS */}
                 <div className="flex border-t border-gray-200">
                   <button onClick={() => handleOpenModal(item)} className="flex-1 py-2.5 text-[10px] font-bold uppercase text-gray-600 hover:bg-black hover:text-white transition-colors flex items-center justify-center gap-1 border-r border-gray-200 sharp-edges">
                     <Edit3 size={12} /> Edit
@@ -246,106 +231,150 @@ const ProductManager = ({ category }) => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 20 }}
-              className="bg-white w-full max-w-2xl shadow-2xl flex flex-col max-h-[95vh] sharp-edges"
+              className="bg-white w-full max-w-2xl shadow-2xl flex flex-col max-h-[90vh] sharp-edges"
             >
+
+              {/* MODAL HEADER */}
               <div className="bg-black text-white p-5 flex justify-between items-center shrink-0">
                 <div className="flex items-center gap-3">
                   <div className="bg-[rgb(157,71,10)] p-1">
-                    <Maximize size={20} />
+                    {isExpandedView ? <List size={20} /> : <Maximize size={20} />}
                   </div>
                   <h3 className="font-bold text-xl uppercase tracking-wider">
-                    {editingProduct ? 'Edit Specification' : 'New Entry'}
+                    {isExpandedView ? 'Device Manager' : (editingProduct ? 'Edit Specification' : 'New Entry')}
                   </h3>
                 </div>
                 <button onClick={() => setIsModalOpen(false)} className="hover:text-[rgb(157,71,10)] transition"><X size={24} /></button>
               </div>
 
-              <div className="p-8 overflow-y-auto custom-scrollbar">
-                <form className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* 
+                  MODAL CONTENT WRAPPER 
+                  'flex-1' makes it take all remaining height.
+                  'overflow-y-auto' enables scrolling on this container.
+              */}
+              <div className="flex-1 overflow-y-auto custom-scrollbar bg-white min-h-0">
 
-                  {/* --- SECTION 1: SPECIFICATIONS (ASKED FIRST) --- */}
-                  
-                  {category === 'Screen Guard' && (
-                    <>
-                      <div className="md:col-span-2 p-4 bg-gray-50 border border-gray-200">
-                        <label className="block text-xs font-black text-[rgb(157,71,10)] uppercase mb-2">Original Drawing (Master Model)</label>
-                        <input name="originalDrawingModel" value={formData.specs.originalDrawingModel} onChange={e => handleChange(e, true)} className="w-full p-3 border border-gray-300 focus:border-black outline-none font-bold sharp-edges" placeholder="e.g. Vivo Y20" autoFocus />
-                      </div>
-                      <div><label className="text-xs font-black text-gray-400 uppercase">Height (mm)</label><input type="number" name="height" value={formData.specs.height} onChange={e => handleChange(e, true)} className="w-full p-3 border border-gray-300 focus:border-black outline-none sharp-edges" /></div>
-                      <div><label className="text-xs font-black text-gray-400 uppercase">Width (mm)</label><input type="number" name="width" value={formData.specs.width} onChange={e => handleChange(e, true)} className="w-full p-3 border border-gray-300 focus:border-black outline-none sharp-edges" /></div>
-                      
-                      <div className="md:col-span-2 grid grid-cols-2 gap-4 pt-4 border-t border-gray-100 mt-2">
-                        <span className="col-span-2 text-xs font-bold text-gray-500 uppercase tracking-widest text-center">Corner Radius Settings</span>
-                        {['radiusTopLeft', 'radiusTopRight', 'radiusBottomLeft', 'radiusBottomRight'].map(field => (
-                          <div key={field}>
-                            <label className="text-[10px] font-bold text-gray-400 uppercase">{formatKey(field)}</label>
-                            <input type="number" name={field} value={formData.specs[field]} onChange={e => handleChange(e, true)} className="w-full p-2 border border-gray-300 focus:border-[rgb(157,71,10)] outline-none bg-gray-50 sharp-edges" />
-                          </div>
-                        ))}
-                      </div>
-                    </>
-                  )}
+                {isExpandedView ? (
+                  /* === EXPANDED VIEW === */
+                  <div className="flex flex-col h-full">
 
-                  {(category === 'Phone Case' || category === 'CC Board' || category === 'Center Panel') && (
-                    <>
-                      <div className="md:col-span-2">
-                        <label className="block text-xs font-black text-[rgb(157,71,10)] uppercase mb-2">Base Model</label>
-                        <input name="baseModel" value={formData.specs.baseModel} onChange={e => handleChange(e, true)} className="w-full p-3 border border-gray-300 focus:border-black outline-none sharp-edges font-bold" placeholder="e.g. Samsung A50" autoFocus />
-                      </div>
-                      {(category === 'CC Board' || category === 'Center Panel') && <div><label className="text-xs font-black text-gray-400 uppercase">Model No</label><input name="modelNo" value={formData.specs.modelNo} onChange={e => handleChange(e, true)} className="w-full p-3 border border-gray-300 focus:border-black outline-none sharp-edges" /></div>}
-                    </>
-                  )}
+                    {/* Sub Header */}
+                    <div className="bg-white p-3 border-b border-gray-200 flex justify-between items-center shrink-0 shadow-sm">
+                      <span className="text-xs font-black text-gray-500 uppercase">
+                        All Devices ({formData.compatibleDevices ? formData.compatibleDevices.split(',').filter(Boolean).length : 0})
+                      </span>
+                      <button onClick={() => setIsExpandedView(false)} className="text-[rgb(157,71,10)] font-bold text-xs uppercase hover:underline flex items-center">
+                        <Minimize2 size={14} className="mr-1" /> Return to Form
+                      </button>
+                    </div>
 
-                  {(category === 'Combo/Display' || category === 'Battery') && (
-                    <>
-                      {category === 'Combo/Display' && <div><label className="text-xs font-black text-gray-400 uppercase">Brand Name</label><input name="brandName" value={formData.specs.brandName} onChange={e => handleChange(e, true)} className="w-full p-3 border border-gray-300 focus:border-black outline-none sharp-edges" /></div>}
-                      <div className={category === 'Battery' ? "md:col-span-2" : ""}><label className="text-xs font-black text-[rgb(157,71,10)] uppercase">Model Number</label><input name="modelNo" value={formData.specs.modelNo} onChange={e => handleChange(e, true)} className="w-full p-3 border border-gray-300 focus:border-black outline-none sharp-edges font-bold" autoFocus /></div>
-                    </>
-                  )}
-
-                  {/* --- SECTION 2: COMPATIBLE DEVICES (ASKED LAST) --- */}
-                  <div className="md:col-span-2 border-t-2 border-gray-100 pt-6 mt-2">
-                    <label className="block text-xs font-black text-gray-400 uppercase mb-2">
-                      Compatible Devices (Press Enter to Add)
-                    </label>
-                    
-                    {/* The Tag Input Area */}
-                    <div className="bg-gray-50 border border-gray-300 p-2 sharp-edges focus-within:ring-1 focus-within:ring-[rgb(157,71,10)] focus-within:border-[rgb(157,71,10)]">
-                      
-                      {/* Tag List Container - Scrollable for many devices */}
-                      <div className="flex flex-wrap gap-2 mb-2 max-h-32 overflow-y-auto custom-scrollbar">
+                    {/* SCROLLABLE AREA (Expanded) */}
+                    <div className="flex-1 overflow-y-auto p-4 custom-scrollbar bg-gray-50 min-h-0">
+                      <div className="flex flex-wrap gap-2 content-start">
                         {formData.compatibleDevices && formData.compatibleDevices.split(',').filter(t => t.trim() !== '').map((tag, index) => (
-                          <span key={index} className="inline-flex items-center bg-black text-white text-xs font-bold px-2 py-1 uppercase tracking-wider sharp-edges animate-in zoom-in duration-200">
-                            {tag}
-                            <button type="button" onClick={() => removeTag(tag)} className="ml-2 hover:text-[rgb(157,71,10)]">
-                              <X size={12} />
-                            </button>
+                          <span key={index} className="inline-flex items-center bg-white border border-gray-300 shadow-sm text-black text-sm font-bold px-3 py-2 uppercase tracking-wide sharp-edges group hover:border-[rgb(157,71,10)] transition-colors">
+                            {tag} <button type="button" onClick={() => removeTag(tag)} className="ml-3 text-gray-300 hover:text-red-600"><X size={14} /></button>
                           </span>
                         ))}
                       </div>
 
-                      {/* Typing Input */}
-                      <input 
-                        type="text" 
+                      {(!formData.compatibleDevices || formData.compatibleDevices.length === 0) && (
+                        <div className="h-full flex flex-col items-center justify-center opacity-30 min-h-[150px]">
+                          <Grid size={40} />
+                          <span className="font-bold uppercase mt-2">No Devices Added</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* INPUT AT BOTTOM */}
+                    <div className="p-4 bg-white border-t border-gray-200 shrink-0">
+                      <input
+                        type="text"
                         value={tagInput}
                         onChange={(e) => setTagInput(e.target.value)}
                         onKeyDown={handleTagKeyDown}
-                        className="w-full bg-transparent outline-none text-sm font-semibold p-1"
-                        placeholder="Type device name & press Enter (e.g. Vivo Y50)"
+                        autoFocus
+                        className="w-full p-4 border-2 border-gray-300 focus:border-[rgb(157,71,10)] outline-none font-bold text-lg sharp-edges"
+                        placeholder="Type device name & Press Enter..."
                       />
                     </div>
-                    <p className="text-[10px] text-gray-400 mt-1 text-right">Added: {formData.compatibleDevices ? formData.compatibleDevices.split(',').filter(Boolean).length : 0} Devices</p>
                   </div>
+                ) : (
 
-                </form>
+                  /* === NORMAL FORM VIEW === */
+                  <div className="p-8">
+                    <form className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+                      {category === 'Screen Guard' && (
+                        <>
+                          <div className="md:col-span-2 p-4 bg-gray-50 border border-gray-200">
+                            <label className="block text-xs font-black text-[rgb(157,71,10)] uppercase mb-2">Original Drawing (Master Model)</label>
+                            <input name="originalDrawingModel" value={formData.specs.originalDrawingModel} onChange={e => handleChange(e, true)} className="w-full p-3 border border-gray-300 focus:border-black outline-none font-bold sharp-edges" placeholder="e.g. Vivo Y20" autoFocus />
+                          </div>
+                          <div><label className="text-xs font-black text-gray-400 uppercase">Height (mm)</label><input type="number" name="height" value={formData.specs.height} onChange={e => handleChange(e, true)} className="w-full p-3 border border-gray-300 focus:border-black outline-none sharp-edges" /></div>
+                          <div><label className="text-xs font-black text-gray-400 uppercase">Width (mm)</label><input type="number" name="width" value={formData.specs.width} onChange={e => handleChange(e, true)} className="w-full p-3 border border-gray-300 focus:border-black outline-none sharp-edges" /></div>
+
+                          <div className="md:col-span-2 grid grid-cols-2 gap-4 pt-4 border-t border-gray-100 mt-2">
+                            <span className="col-span-2 text-xs font-bold text-gray-500 uppercase tracking-widest text-center">Corner Radius Settings</span>
+                            {['radiusTopLeft', 'radiusTopRight', 'radiusBottomLeft', 'radiusBottomRight'].map(field => (
+                              <div key={field}><label className="text-[10px] font-bold text-gray-400 uppercase">{formatKey(field)}</label><input type="number" name={field} value={formData.specs[field]} onChange={e => handleChange(e, true)} className="w-full p-2 border border-gray-300 focus:border-[rgb(157,71,10)] outline-none bg-gray-50 sharp-edges" /></div>
+                            ))}
+                          </div>
+                        </>
+                      )}
+
+                      {(category === 'Phone Case' || category === 'CC Board' || category === 'Center Panel') && (
+                        <>
+                          <div className="md:col-span-2"><label className="block text-xs font-black text-[rgb(157,71,10)] uppercase mb-2">Base Model</label><input name="baseModel" value={formData.specs.baseModel} onChange={e => handleChange(e, true)} className="w-full p-3 border border-gray-300 focus:border-black outline-none sharp-edges font-bold" placeholder="e.g. Samsung A50" autoFocus /></div>
+                          {(category === 'CC Board' || category === 'Center Panel') && <div><label className="text-xs font-black text-gray-400 uppercase">Model No</label><input name="modelNo" value={formData.specs.modelNo} onChange={e => handleChange(e, true)} className="w-full p-3 border border-gray-300 focus:border-black outline-none sharp-edges" /></div>}
+                        </>
+                      )}
+
+                      {(category === 'Combo/Display' || category === 'Battery') && (
+                        <>
+                          {category === 'Combo/Display' && <div><label className="text-xs font-black text-gray-400 uppercase">Brand Name</label><input name="brandName" value={formData.specs.brandName} onChange={e => handleChange(e, true)} className="w-full p-3 border border-gray-300 focus:border-black outline-none sharp-edges" /></div>}
+                          <div className={category === 'Battery' ? "md:col-span-2" : ""}><label className="text-xs font-black text-[rgb(157,71,10)] uppercase">Model Number</label><input name="modelNo" value={formData.specs.modelNo} onChange={e => handleChange(e, true)} className="w-full p-3 border border-gray-300 focus:border-black outline-none sharp-edges font-bold" autoFocus /></div>
+                        </>
+                      )}
+
+                      {/* COMPATIBLE DEVICES (Mini View) */}
+                      <div className="md:col-span-2 border-t-2 border-gray-100 pt-6 mt-2">
+                        <div className="flex justify-between items-center mb-2">
+                          <label className="block text-xs font-black text-gray-400 uppercase">Compatible Devices</label>
+                          {/* EXPAND BUTTON */}
+                          <button
+                            type="button"
+                            onClick={() => setIsExpandedView(true)}
+                            className="text-[10px] font-bold text-[rgb(157,71,10)] uppercase flex items-center hover:bg-black hover:text-white px-3 py-1 border border-gray-200 transition-colors"
+                          >
+                            <Maximize size={12} className="mr-1" /> Expand View
+                          </button>
+                        </div>
+
+                        <div className="bg-gray-50 border border-gray-300 p-2 sharp-edges">
+                          <div className="flex flex-wrap gap-2 mb-2 max-h-32 overflow-y-auto custom-scrollbar">
+                            {formData.compatibleDevices && formData.compatibleDevices.split(',').filter(t => t.trim() !== '').map((tag, index) => (
+                              <span key={index} className="inline-flex items-center bg-black text-white text-xs font-bold px-2 py-1 uppercase tracking-wider sharp-edges">
+                                {tag} <button type="button" onClick={() => removeTag(tag)} className="ml-2 hover:text-[rgb(157,71,10)]"><X size={12} /></button>
+                              </span>
+                            ))}
+                          </div>
+                          <input type="text" value={tagInput} onChange={(e) => setTagInput(e.target.value)} onKeyDown={handleTagKeyDown} className="w-full bg-transparent outline-none text-sm font-semibold p-1" placeholder="Type device name & press Enter..." />
+                        </div>
+                      </div>
+                    </form>
+                  </div>
+                )}
               </div>
 
-              <div className="p-5 bg-gray-100 border-t border-gray-200 flex justify-end gap-3 shrink-0">
+              {/* FOOTER (Fixed Height) */}
+              <div className="p-5 bg-gray-100 border-t border-gray-200 flex justify-end gap-3 shrink-0 relative z-30">
                 <button onClick={() => setIsModalOpen(false)} className="px-6 py-3 font-bold uppercase text-gray-500 hover:bg-gray-200 transition text-sm sharp-edges">Cancel</button>
                 <button onClick={handleSave} className="bg-[rgb(157,71,10)] text-white px-8 py-3 font-bold uppercase text-sm hover:bg-black transition flex items-center shadow-lg sharp-edges">
                   <Save size={16} className="mr-2" /> Save Record
                 </button>
               </div>
+
             </motion.div>
           </div>
         )}
