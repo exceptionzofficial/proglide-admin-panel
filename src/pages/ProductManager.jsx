@@ -176,7 +176,7 @@ const ProductManager = ({ category }) => {
                   <div className="flex justify-between items-start">
                     <div className="overflow-hidden">
                       <span className="text-[9px] font-bold uppercase tracking-widest opacity-70 block mb-0.5 truncate">
-                        {item.specs.brandName || category}
+                        {(category === 'Battery' || category === 'Combo/Display') ? `${item.specs.brandName || category} - Model No` : (item.specs.brandName || category)}
                       </span>
                       <h3 className="text-lg font-black leading-none truncate" title={item.specs.originalDrawingModel || item.specs.baseModel || item.specs.modelNo}>
                         {item.specs.originalDrawingModel || item.specs.baseModel || item.specs.modelNo || "Unknown Model"}
