@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Plus, X, Save, Trash2, Edit3, Grid, Smartphone, Maximize, Minimize2, List } from 'lucide-react';
+import { Search, Plus, X, Save, Trash2, Edit3, Grid, Smartphone, Maximize, Minimize2, List, ChevronDown } from 'lucide-react';
 
 const API_URL = 'https://proglide-backend.vercel.app/api/products';
 
@@ -36,6 +36,8 @@ const ProductManager = ({ category }) => {
   };
   const [formData, setFormData] = useState(initialFormState);
   const [tagInput, setTagInput] = useState('');
+  const [sortOption, setSortOption] = useState('default');
+  const [showSuggestions, setShowSuggestions] = useState(false);
 
   // Fetch Data
   useEffect(() => {
@@ -71,23 +73,43 @@ const ProductManager = ({ category }) => {
   const handleDelete = async (id) => {
     if (window.confirm("CONFIRM DELETE: This action cannot be undone.")) {
       try {
-        await axios.delete(`${API_URL}/${id}`);
+        const token = sessionStorage.getItem('token');
+        await axios.delete(`${API_URL}/${id}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
         setProducts(products.filter(p => p._id !== id));
-      } catch (err) { alert("Delete failed"); }
+      } catch (err) {
+        if (err.response && (err.response.status === 401 || err.response.status === 403)) {
+          alert("Session expired. Please login again.");
+          window.location.href = '/login';
+        } else {
+          alert("Delete failed");
+        }
+      }
     }
   };
 
   const handleSave = async () => {
     try {
+      const token = sessionStorage.getItem('token');
+      const config = { headers: { Authorization: `Bearer ${token}` } };
+
       if (editingProduct) {
-        const res = await axios.put(`${API_URL}/${editingProduct._id}`, formData);
+        const res = await axios.put(`${API_URL}/${editingProduct._id}`, formData, config);
         setProducts(products.map(p => p._id === editingProduct._id ? res.data : p));
       } else {
-        const res = await axios.post(API_URL, formData);
+        const res = await axios.post(API_URL, formData, config);
         setProducts([res.data, ...products]);
       }
       setIsModalOpen(false);
-    } catch (error) { console.error(error); }
+    } catch (error) {
+      if (error.response && (error.response.status === 401 || error.response.status === 403)) {
+        alert("Session expired. Please login again.");
+        window.location.href = '/login';
+      } else {
+        console.error(error);
+      }
+    }
   };
 
   const handleChange = (e, isSpec = false) => {
@@ -102,8 +124,22 @@ const ProductManager = ({ category }) => {
       e.preventDefault();
       const val = tagInput.trim();
       if (!val) return;
+
+      // DUPLICATE CHECK
+      const duplicateProduct = products.find(p => {
+        if (editingProduct && p._id === editingProduct._id) return false;
+        const devices = p.compatibleDevices ? p.compatibleDevices.split(',') : [];
+        return devices.some(d => d.trim().toLowerCase() === val.toLowerCase());
+      });
+
+      if (duplicateProduct) {
+        const prodName = duplicateProduct.specs.originalDrawingModel || duplicateProduct.specs.baseModel || duplicateProduct.specs.modelNo || "Unknown Product";
+        alert(`Device '${val}' already exists in product: ${prodName} (${duplicateProduct.category})`);
+        return;
+      }
+
       const currentTags = formData.compatibleDevices ? formData.compatibleDevices.split(',') : [];
-      if (!currentTags.includes(val)) {
+      if (!currentTags.some(t => t.toLowerCase() === val.toLowerCase())) {
         const newTags = [...currentTags, val];
         setFormData(prev => ({ ...prev, compatibleDevices: newTags.join(',') }));
       }
@@ -117,7 +153,54 @@ const ProductManager = ({ category }) => {
     setFormData(prev => ({ ...prev, compatibleDevices: newTags.join(',') }));
   };
 
-  const filteredProducts = products.filter(p => JSON.stringify(p).toLowerCase().includes(searchTerm.toLowerCase()));
+  // --- SEARCH & SORT LOGIC ---
+
+  // Get the display name for a product (used for sorting and search)
+  const getProductName = (p) => p.specs.originalDrawingModel || p.specs.baseModel || p.specs.modelNo || "";
+
+  // Generate suggestions based on search term
+  const suggestions = products
+    .map(p => getProductName(p))
+    .filter(name => name && name.toLowerCase().includes(searchTerm.toLowerCase()))
+    .filter((v, i, a) => a.indexOf(v) === i) // Unique
+    .slice(0, 5); // Limit to 5
+
+  const filteredAndSortedProducts = (() => {
+    let result = [...products];
+
+    // 1. Search Filter
+    if (searchTerm.trim()) {
+      const term = searchTerm.toLowerCase().trim();
+
+      // Check for exact matches first
+      const exactMatches = result.filter(p => getProductName(p).toLowerCase() === term);
+
+      if (exactMatches.length > 0) {
+        // If we have exact matches, ONLY show those (User requirement: "only wants the results what he typed")
+        result = exactMatches;
+      } else {
+        // Otherwise, show partial matches
+        result = result.filter(p => {
+          const name = getProductName(p).toLowerCase();
+          const devices = (p.compatibleDevices || "").toLowerCase();
+          return name.includes(term) || devices.includes(term);
+        });
+      }
+    }
+
+    // 2. Sorting
+    if (sortOption === 'a-z') {
+      result.sort((a, b) => getProductName(a).localeCompare(getProductName(b)));
+    } else if (sortOption === 'z-a') {
+      result.sort((a, b) => getProductName(b).localeCompare(getProductName(a)));
+    } else if (sortOption === 'height-asc' && category === 'Screen Guard') {
+      result.sort((a, b) => (parseFloat(a.specs.height) || 0) - (parseFloat(b.specs.height) || 0));
+    } else if (sortOption === 'height-desc' && category === 'Screen Guard') {
+      result.sort((a, b) => (parseFloat(b.specs.height) || 0) - (parseFloat(a.specs.height) || 0));
+    }
+
+    return result;
+  })();
 
   return (
     <div className="h-full flex flex-col bg-[#f3f4f6] p-4 md:p-6 page-transition">
@@ -131,7 +214,31 @@ const ProductManager = ({ category }) => {
           </div>
           <p className="text-gray-500 font-medium ml-4 text-sm">Inventory Management System</p>
         </div>
-        <div className="flex gap-0 shadow-sm w-full md:w-auto mt-4 md:mt-0">
+        <div className="flex gap-2 shadow-sm w-full md:w-auto mt-4 md:mt-0 items-center">
+
+          {/* SORT DROPDOWN */}
+          <div className="relative group">
+            <select
+              value={sortOption}
+              onChange={(e) => setSortOption(e.target.value)}
+              className="appearance-none bg-white border border-gray-300 text-gray-700 py-2.5 pl-3 pr-8 text-xs font-bold uppercase outline-none focus:border-[rgb(157,71,10)] sharp-edges cursor-pointer hover:border-[rgb(157,71,10)] transition-colors"
+            >
+              <option value="default">Sort By: Default</option>
+              <option value="a-z">Name (A-Z)</option>
+              <option value="z-a">Name (Z-A)</option>
+              {category === 'Screen Guard' && (
+                <>
+                  <option value="height-asc">Height (Low &uarr;)</option>
+                  <option value="height-desc">Height (High &darr;)</option>
+                </>
+              )}
+            </select>
+            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
+              <ChevronDown size={14} />
+            </div>
+          </div>
+
+          {/* SEARCH BAR */}
           <div className="relative flex-1 md:w-64 lg:w-80">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <Search className="h-4 w-4 text-gray-400" />
@@ -140,10 +247,41 @@ const ProductManager = ({ category }) => {
               type="text"
               placeholder="Search..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                setShowSuggestions(true);
+              }}
+              onFocus={() => setShowSuggestions(true)}
+              onBlur={() => setTimeout(() => setShowSuggestions(false), 200)} // Delay to allow click
               className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-300 focus:border-[rgb(157,71,10)] focus:ring-1 focus:ring-[rgb(157,71,10)] outline-none text-sm font-semibold sharp-edges"
             />
+
+            {/* SUGGESTIONS DROPDOWN */}
+            <AnimatePresence>
+              {showSuggestions && searchTerm && suggestions.length > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 10 }}
+                  className="absolute z-50 w-full bg-white border border-gray-200 shadow-xl mt-1 max-h-60 overflow-y-auto sharp-edges"
+                >
+                  {suggestions.map((suggestion, idx) => (
+                    <div
+                      key={idx}
+                      onClick={() => {
+                        setSearchTerm(suggestion);
+                        setShowSuggestions(false);
+                      }}
+                      className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-sm font-medium text-gray-700 border-b border-gray-50 last:border-0"
+                    >
+                      {suggestion}
+                    </div>
+                  ))}
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
+
           <button
             onClick={() => handleOpenModal()}
             className="bg-[rgb(157,71,10)] text-white px-5 py-2.5 font-bold uppercase text-xs tracking-wider hover:bg-black transition-colors flex items-center gap-2 sharp-edges"
@@ -162,7 +300,7 @@ const ProductManager = ({ category }) => {
       ) : (
         <motion.div layout className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4 pb-20">
           <AnimatePresence>
-            {filteredProducts.map((item) => (
+            {filteredAndSortedProducts.map((item) => (
               <motion.div
                 layout
                 initial={{ opacity: 0, scale: 0.95 }}
@@ -272,7 +410,7 @@ const ProductManager = ({ category }) => {
                     <div className="flex-1 overflow-y-auto p-4 custom-scrollbar bg-gray-50 min-h-0">
                       <div className="flex flex-wrap gap-2 content-start">
                         {formData.compatibleDevices && formData.compatibleDevices.split(',').filter(t => t.trim() !== '').map((tag, index) => (
-                          <span key={index} className="inline-flex items-center bg-white border border-gray-300 shadow-sm text-black text-sm font-bold px-3 py-2 uppercase tracking-wide sharp-edges group hover:border-[rgb(157,71,10)] transition-colors">
+                          <span key={index} className="inline-flex items-center bg-white border border-gray-300 shadow-sm text-black text-sm font-bold px-3 py-2 tracking-wide sharp-edges group hover:border-[rgb(157,71,10)] transition-colors">
                             {tag} <button type="button" onClick={() => removeTag(tag)} className="ml-3 text-gray-300 hover:text-red-600"><X size={14} /></button>
                           </span>
                         ))}
@@ -354,7 +492,7 @@ const ProductManager = ({ category }) => {
                         <div className="bg-gray-50 border border-gray-300 p-2 sharp-edges">
                           <div className="flex flex-wrap gap-2 mb-2 max-h-32 overflow-y-auto custom-scrollbar">
                             {formData.compatibleDevices && formData.compatibleDevices.split(',').filter(t => t.trim() !== '').map((tag, index) => (
-                              <span key={index} className="inline-flex items-center bg-black text-white text-xs font-bold px-2 py-1 uppercase tracking-wider sharp-edges">
+                              <span key={index} className="inline-flex items-center bg-black text-white text-xs font-bold px-2 py-1 tracking-wider sharp-edges">
                                 {tag} <button type="button" onClick={() => removeTag(tag)} className="ml-2 hover:text-[rgb(157,71,10)]"><X size={12} /></button>
                               </span>
                             ))}
