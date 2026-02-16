@@ -159,30 +159,56 @@ const ProductManager = ({ category }) => {
   const getProductName = (p) => p.specs.originalDrawingModel || p.specs.baseModel || p.specs.modelNo || "";
 
   // Generate suggestions based on search term
-  const suggestions = products
-    .map(p => getProductName(p))
-    .filter(name => name && name.toLowerCase().includes(searchTerm.toLowerCase()))
-    .filter((v, i, a) => a.indexOf(v) === i) // Unique
-    .slice(0, 5); // Limit to 5
+  const suggestions = (() => {
+    if (!searchTerm) return [];
+    const term = searchTerm.toLowerCase();
+    const allSuggestions = [];
+
+    products.forEach(p => {
+      // Product Name
+      const name = getProductName(p);
+      if (name && name.toLowerCase().includes(term)) {
+        allSuggestions.push(name);
+      }
+      // Compatible Devices
+      if (p.compatibleDevices) {
+        p.compatibleDevices.split(',').forEach(d => {
+          const device = d.trim();
+          if (device.toLowerCase().includes(term)) {
+            allSuggestions.push(device);
+          }
+        });
+      }
+    });
+
+    return [...new Set(allSuggestions)].slice(0, 5);
+  })();
 
   const filteredAndSortedProducts = (() => {
     let result = [...products];
 
+    // Helper to normalize strings (remove spaces, lowercase)
+    const normalize = (str) => str ? str.replace(/\s+/g, '').toLowerCase() : '';
+
     // 1. Search Filter
     if (searchTerm.trim()) {
-      const term = searchTerm.toLowerCase().trim();
+      const term = normalize(searchTerm);
 
-      // Check for exact matches first
-      const exactMatches = result.filter(p => getProductName(p).toLowerCase() === term);
+      // Check for EXACT matches first (Strict Mode, Space Insensitive)
+      const exactMatches = result.filter(p => {
+        const name = normalize(getProductName(p));
+        const devices = p.compatibleDevices ? p.compatibleDevices.split(',').map(d => normalize(d)) : [];
+        return name === term || devices.includes(term);
+      });
 
       if (exactMatches.length > 0) {
-        // If we have exact matches, ONLY show those (User requirement: "only wants the results what he typed")
+        // If we have exact matches, ONLY show those
         result = exactMatches;
       } else {
-        // Otherwise, show partial matches
+        // Otherwise, show partial matches (Fallback)
         result = result.filter(p => {
-          const name = getProductName(p).toLowerCase();
-          const devices = (p.compatibleDevices || "").toLowerCase();
+          const name = normalize(getProductName(p));
+          const devices = normalize(p.compatibleDevices || "");
           return name.includes(term) || devices.includes(term);
         });
       }
