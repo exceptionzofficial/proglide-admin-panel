@@ -3,7 +3,7 @@ import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Plus, X, Save, Trash2, Edit3, Grid, Smartphone, Maximize, Minimize2, List, ChevronDown } from 'lucide-react';
 
-const API_URL = 'https://proglide-backend.vercel.app/api/products';
+const API_URL = 'https://proglide-backend-kappa.vercel.app/api/products';
 
 // Helper to format text
 const formatKey = (key) => {
