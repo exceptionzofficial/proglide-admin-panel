@@ -3,7 +3,7 @@ import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Store, Mail, Phone, User, CreditCard, Crown, Shield, Clock, Calendar, ChevronRight, AlertCircle, RefreshCw } from 'lucide-react';
 
-const API_BASE = 'https://proglide-backend-kappa.vercel.app/api';
+const API_BASE = 'https://proglide-backend.vercel.app/api';
 
 
 // ─── Users Tab (existing) ───────────────────────────────────────────
